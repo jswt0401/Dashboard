@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { color: #666; }
+        .success { color: green; }
+        .error { color: red; }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Test Side</h1>
+
+    <div class="test-section">
+        <h2>1. Test biblioteker</h2>
+        <button onclick="testLibraries()">Test SheetJS & Chart.js</button>
+        <div id="libraryTest"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test CSV parsing</h2>
+        <button onclick="testCSVParsing()">Test CSV Parser</button>
+        <div id="csvTest"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Åbn Dashboard</h2>
+        <p>Klik på knappen for at åbne det rigtige dashboard:</p>
+        <button onclick="window.location.href='index.html'">Åbn Dashboard</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Debugging tips</h2>
+        <ul>
+            <li>Åbn browser konsollen (F12) for at se logs</li>
+            <li>Upload sample-data.csv filen i dashboardet</li>
+            <li>Hvis du ser fejl i konsollen, note dem</li>
+            <li>Sørg for at alle filer (index.html, app.js, styles.css) er i samme mappe</li>
+        </ul>
+    </div>
+
+    <!-- SheetJS for Excel file reading -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+
+    <script>
+        function testLibraries() {
+            const output = document.getElementById('libraryTest');
+            let result = '<h3>Test Resultater:</h3>';
+
+            // Test SheetJS
+            if (typeof XLSX !== 'undefined') {
+                result += '<p class="success">✅ SheetJS loaded successfully</p>';
+                result += `<p>Version: ${XLSX.version}</p>`;
+            } else {
+                result += '<p class="error">❌ SheetJS failed to load</p>';
+            }
+
+            // Test Chart.js
+            if (typeof Chart !== 'undefined') {
+                result += '<p class="success">✅ Chart.js loaded successfully</p>';
+                result += `<p>Version: ${Chart.version}</p>`;
+            } else {
+                result += '<p class="error">❌ Chart.js failed to load</p>';
+            }
+
+            output.innerHTML = result;
+        }
+
+        function testCSVParsing() {
+            const output = document.getElementById('csvTest');
+
+            const testCSV = `Måned,Salg,Udgifter
+Januar,15000,8000
+Februar,18000,9000
+Marts,22000,10000`;
+
+            try {
+                // Parse CSV
+                const lines = testCSV.split('\n').filter(line => line.trim());
+                const data = lines.map(line => line.split(',').map(cell => cell.trim()));
+
+                let result = '<h3>CSV Parse Test:</h3>';
+                result += '<p class="success">✅ CSV parsed successfully</p>';
+                result += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+                // Test numeric detection
+                const numericCols = [];
+                for (let j = 1; j < data[0].length; j++) {
+                    let isNumeric = true;
+                    for (let i = 1; i < data.length; i++) {
+                        if (isNaN(parseFloat(data[i][j]))) {
+                            isNumeric = false;
+                            break;
+                        }
+                    }
+                    if (isNumeric) {
+                        numericCols.push(data[0][j]);
+                    }
+                }
+
+                result += `<p class="success">✅ Found ${numericCols.length} numeric columns: ${numericCols.join(', ')}</p>`;
+
+                output.innerHTML = result;
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        // Auto-run tests on load
+        window.onload = function() {
+            console.log('Test page loaded');
+            testLibraries();
+        };
+    </script>
+</body>
+</html>

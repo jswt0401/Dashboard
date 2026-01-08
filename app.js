@@ -52,6 +52,8 @@ function handleFile(file) {
     const fileName = file.name;
     const fileSize = (file.size / 1024).toFixed(2);
 
+    console.log('Processing file:', fileName);
+
     // Show file info
     const fileInfo = document.getElementById('fileInfo');
     fileInfo.innerHTML = `
@@ -62,22 +64,58 @@ function handleFile(file) {
     `;
     fileInfo.style.display = 'block';
 
+    // Check if CSV file
+    const isCSV = fileName.toLowerCase().endsWith('.csv');
+
     // Read the file
     const reader = new FileReader();
 
+    reader.onerror = function() {
+        console.error('File read error');
+        fileInfo.innerHTML = `
+            <h3>❌ Fejl</h3>
+            <p style="color: red;">Kunne ikke læse filen</p>
+        `;
+    };
+
     reader.onload = function(e) {
         try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
+            console.log('File loaded, parsing...');
 
-            // Get first sheet
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
+            let jsonData;
 
-            // Convert to JSON
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            if (isCSV) {
+                // For CSV, read as text
+                const text = e.target.result;
+                console.log('CSV content preview:', text.substring(0, 200));
 
-            if (jsonData.length > 0) {
+                // Parse CSV manually
+                const lines = text.split('\n').filter(line => line.trim());
+                jsonData = lines.map(line => {
+                    // Simple CSV parsing (handles basic cases)
+                    return line.split(',').map(cell => cell.trim());
+                });
+            } else {
+                // For Excel files
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Get first sheet
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert to JSON with raw values
+                jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                    header: 1,
+                    raw: false,
+                    defval: ''
+                });
+            }
+
+            console.log('Parsed data:', jsonData);
+            console.log('Rows:', jsonData.length, 'Columns:', jsonData[0]?.length);
+
+            if (jsonData && jsonData.length > 0 && jsonData[0].length > 0) {
                 processData(jsonData);
                 fileInfo.innerHTML = `
                     <h3>✅ Data indlæst succesfuldt!</h3>
@@ -89,18 +127,26 @@ function handleFile(file) {
                 throw new Error('Ingen data fundet i filen');
             }
         } catch (error) {
+            console.error('Error processing file:', error);
             fileInfo.innerHTML = `
                 <h3>❌ Fejl</h3>
                 <p style="color: red;">Kunne ikke læse filen: ${error.message}</p>
+                <p style="font-size: 0.9em;">Tjek browser konsollen (F12) for mere info</p>
             `;
         }
     };
 
-    reader.readAsArrayBuffer(file);
+    // Read as text for CSV, as array buffer for Excel
+    if (isCSV) {
+        reader.readAsText(file);
+    } else {
+        reader.readAsArrayBuffer(file);
+    }
 }
 
 // Process and display data
 function processData(data) {
+    console.log('Processing data...');
     currentData = data;
 
     // Show data sections
@@ -108,13 +154,18 @@ function processData(data) {
     document.getElementById('chartsSection').style.display = 'block';
 
     // Display statistics
+    console.log('Displaying statistics...');
     displayStatistics(data);
 
     // Display table
+    console.log('Displaying table...');
     displayTable(data);
 
     // Create charts
+    console.log('Creating charts...');
     createCharts(data);
+
+    console.log('Data processing complete!');
 }
 
 // Display statistics
@@ -204,22 +255,28 @@ function displayTable(data) {
 
 // Create charts
 function createCharts(data) {
-    if (data.length < 2) return;
+    console.log('createCharts called with data length:', data.length);
 
-    // Find numeric columns
+    if (data.length < 2) {
+        console.log('Not enough data for charts');
+        return;
+    }
+
+    // Find numeric columns (skip first column as it's usually labels)
     const numericColumns = [];
-    for (let j = 0; j < data[0].length; j++) {
+    for (let j = 1; j < data[0].length; j++) {
         let isNumeric = true;
         const values = [];
 
         for (let i = 1; i < Math.min(data.length, 100); i++) {
             const value = data[i][j];
             if (value !== null && value !== undefined && value !== '') {
-                if (isNaN(value)) {
+                const numValue = parseFloat(String(value).replace(/,/g, ''));
+                if (isNaN(numValue)) {
                     isNumeric = false;
                     break;
                 }
-                values.push(parseFloat(value));
+                values.push(numValue);
             }
         }
 
@@ -229,27 +286,43 @@ function createCharts(data) {
                 name: data[0][j] || `Kolonne ${j + 1}`,
                 values: values
             });
+            console.log(`Found numeric column: ${data[0][j]} with ${values.length} values`);
         }
     }
+
+    console.log(`Total numeric columns found: ${numericColumns.length}`);
 
     // Get labels (first column or row numbers)
     const labels = [];
     const maxDataPoints = Math.min(data.length - 1, 20);
 
     for (let i = 1; i <= maxDataPoints; i++) {
-        labels.push(data[i][0] || `Række ${i}`);
+        labels.push(String(data[i][0] || `Række ${i}`));
     }
+
+    console.log('Labels:', labels);
 
     // Create Chart 1 - Line/Bar chart of first numeric column
     if (numericColumns.length > 0) {
+        console.log('Creating chart 1...');
         createChart1(labels, numericColumns[0]);
+    } else {
+        console.log('No numeric columns for chart 1');
+        document.getElementById('chart1').parentElement.innerHTML =
+            '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Ingen numeriske data fundet til visualisering</p>';
     }
 
     // Create Chart 2 - Comparison of multiple columns or pie chart
     if (numericColumns.length > 1) {
+        console.log('Creating chart 2 (bar)...');
         createChart2(labels, numericColumns);
     } else if (numericColumns.length === 1) {
+        console.log('Creating chart 2 (pie)...');
         createPieChart(labels, numericColumns[0]);
+    } else {
+        console.log('No data for chart 2');
+        document.getElementById('chart2').parentElement.innerHTML =
+            '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Tilføj flere numeriske kolonner for sammenligning</p>';
     }
 }
 

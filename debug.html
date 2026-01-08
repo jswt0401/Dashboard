@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEBUG Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .debug-box {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #6366f1;
+        }
+        .success { border-left-color: green; background: #f0fff0; }
+        .error { border-left-color: red; background: #fff0f0; }
+        .warning { border-left-color: orange; background: #fffaf0; }
+        h2 { margin-top: 0; color: #333; }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #4f46e5; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status { font-weight: bold; font-size: 18px; margin: 10px 0; }
+        input[type="file"] { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 DEBUG Dashboard</h1>
+    <p>Denne side viser præcis hvad der går galt...</p>
+
+    <div id="step1" class="debug-box">
+        <h2>Step 1: Kan HTML åbne?</h2>
+        <p class="status success">✅ JA - Du kan se denne side</p>
+    </div>
+
+    <div id="step2" class="debug-box">
+        <h2>Step 2: Kan JavaScript køre?</h2>
+        <p class="status" id="jsStatus">⏳ Tester...</p>
+    </div>
+
+    <div id="step3" class="debug-box">
+        <h2>Step 3: Kan biblioteker loade?</h2>
+        <button onclick="testLibraries()">Test Biblioteker</button>
+        <div id="libStatus"></div>
+    </div>
+
+    <div id="step4" class="debug-box">
+        <h2>Step 4: Test fil upload</h2>
+        <p>Upload sample-data.csv:</p>
+        <input type="file" id="fileInput" accept=".csv">
+        <div id="fileStatus"></div>
+        <div id="dataPreview"></div>
+    </div>
+
+    <div id="step5" class="debug-box">
+        <h2>Step 5: Test grafer</h2>
+        <button onclick="testChart()" id="chartBtn" disabled>Test Chart.js</button>
+        <canvas id="testChart" width="400" height="200" style="margin-top: 10px; display: none;"></canvas>
+        <div id="chartStatus"></div>
+    </div>
+
+    <div class="debug-box warning">
+        <h2>📋 Hvad skal du gøre?</h2>
+        <ol>
+            <li>Klik på "Test Biblioteker" knappen</li>
+            <li>Upload sample-data.csv filen</li>
+            <li>Klik "Test Chart.js" hvis den er aktiv</li>
+            <li><strong>KOPIER ALT OUTPUT nedenfor og send til mig</strong></li>
+        </ol>
+    </div>
+
+    <div class="debug-box">
+        <h2>📊 Console Log Output</h2>
+        <button onclick="copyLogs()">Kopier Logs</button>
+        <pre id="consoleOutput">Venter på test...\n</pre>
+    </div>
+
+    <!-- Load libraries -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+
+    <script>
+        // Console logger
+        let logs = [];
+        function log(msg) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMsg = `[${timestamp}] ${msg}`;
+            logs.push(logMsg);
+            console.log(msg);
+            document.getElementById('consoleOutput').textContent = logs.join('\n');
+        }
+
+        // Override console methods
+        const originalLog = console.log;
+        const originalError = console.error;
+        console.log = function(...args) {
+            log('LOG: ' + args.join(' '));
+            originalLog.apply(console, args);
+        };
+        console.error = function(...args) {
+            log('ERROR: ' + args.join(' '));
+            originalError.apply(console, args);
+        };
+
+        log('Page loaded');
+
+        // Step 2: Test JavaScript
+        setTimeout(() => {
+            document.getElementById('jsStatus').innerHTML = '<span class="success">✅ JA - JavaScript kører!</span>';
+            log('JavaScript is working');
+        }, 100);
+
+        // Step 3: Test libraries
+        function testLibraries() {
+            log('Testing libraries...');
+            const output = document.getElementById('libStatus');
+            let html = '<p class="status">Test resultater:</p>';
+
+            // Test internet connection
+            if (!navigator.onLine) {
+                html += '<p class="error">❌ INGEN INTERNET FORBINDELSE!</p>';
+                html += '<p>Du skal være online for at loade biblioteker.</p>';
+                log('ERROR: No internet connection');
+                output.innerHTML = html;
+                return;
+            } else {
+                html += '<p class="success">✅ Internet forbindelse OK</p>';
+                log('Internet connection OK');
+            }
+
+            // Test SheetJS
+            if (typeof XLSX !== 'undefined') {
+                html += '<p class="success">✅ SheetJS loaded successfully!</p>';
+                html += `<p>Version: ${XLSX.version}</p>`;
+                log('SheetJS loaded: ' + XLSX.version);
+            } else {
+                html += '<p class="error">❌ SheetJS failed to load</p>';
+                html += '<p>Dette er problemet! Biblioteket kan ikke loade.</p>';
+                log('ERROR: SheetJS not loaded');
+            }
+
+            // Test Chart.js
+            if (typeof Chart !== 'undefined') {
+                html += '<p class="success">✅ Chart.js loaded successfully!</p>';
+                html += `<p>Version: ${Chart.version}</p>`;
+                log('Chart.js loaded: ' + Chart.version);
+                document.getElementById('chartBtn').disabled = false;
+            } else {
+                html += '<p class="error">❌ Chart.js failed to load</p>';
+                html += '<p>Dette er problemet! Biblioteket kan ikke loade.</p>';
+                log('ERROR: Chart.js not loaded');
+            }
+
+            output.innerHTML = html;
+        }
+
+        // Auto-test libraries after 2 seconds
+        setTimeout(() => {
+            log('Auto-testing libraries...');
+            testLibraries();
+        }, 2000);
+
+        // Step 4: Test file upload
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            log('File selected: ' + file.name);
+
+            const output = document.getElementById('fileStatus');
+            output.innerHTML = '<p class="status">⏳ Læser fil...</p>';
+
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                try {
+                    const text = event.target.result;
+                    log('File loaded, size: ' + text.length + ' bytes');
+
+                    // Parse CSV
+                    const lines = text.split('\n').filter(line => line.trim());
+                    const data = lines.map(line => line.split(',').map(cell => cell.trim()));
+
+                    log('CSV parsed: ' + data.length + ' rows, ' + data[0].length + ' columns');
+
+                    output.innerHTML = `
+                        <p class="status success">✅ Fil læst succesfuldt!</p>
+                        <p><strong>Rækker:</strong> ${data.length}</p>
+                        <p><strong>Kolonner:</strong> ${data[0].length}</p>
+                    `;
+
+                    // Show preview
+                    let preview = '<h3>Data Preview:</h3><table border="1" cellpadding="5" style="border-collapse: collapse;">';
+                    for (let i = 0; i < Math.min(5, data.length); i++) {
+                        preview += '<tr>';
+                        data[i].forEach(cell => {
+                            preview += `<td>${cell}</td>`;
+                        });
+                        preview += '</tr>';
+                    }
+                    preview += '</table>';
+                    document.getElementById('dataPreview').innerHTML = preview;
+
+                } catch (error) {
+                    log('ERROR parsing file: ' + error.message);
+                    output.innerHTML = `<p class="status error">❌ Fejl: ${error.message}</p>`;
+                }
+            };
+
+            reader.onerror = function() {
+                log('ERROR reading file');
+                output.innerHTML = '<p class="status error">❌ Kunne ikke læse fil</p>';
+            };
+
+            reader.readAsText(file);
+        });
+
+        // Step 5: Test Chart.js
+        function testChart() {
+            log('Testing Chart.js...');
+            const output = document.getElementById('chartStatus');
+            const canvas = document.getElementById('testChart');
+            canvas.style.display = 'block';
+
+            try {
+                const ctx = canvas.getContext('2d');
+                const chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar'],
+                        datasets: [{
+                            label: 'Test Data',
+                            data: [12, 19, 15],
+                            backgroundColor: '#6366f1'
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Test Chart'
+                            }
+                        }
+                    }
+                });
+
+                log('Chart created successfully!');
+                output.innerHTML = '<p class="success">✅ Chart.js virker!</p>';
+
+            } catch (error) {
+                log('ERROR creating chart: ' + error.message);
+                output.innerHTML = `<p class="error">❌ Fejl: ${error.message}</p>`;
+            }
+        }
+
+        function copyLogs() {
+            const text = document.getElementById('consoleOutput').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Logs kopieret! Send dem til mig.');
+            });
+        }
+
+        log('Debug page ready');
+    </script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Uden Grafer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Moderne Dashboard</h1>
+            <p class="subtitle">Indlæs dine data fra Excel og visualiser dem</p>
+            <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">⚠️ UDEN GRAFER VERSION (til debugging)</p>
+        </header>
+
+        <main>
+            <!-- File Upload Section -->
+            <section class="upload-section">
+                <div class="upload-box" id="uploadBox">
+                    <div class="upload-icon">📁</div>
+                    <h2>Upload Excel Fil</h2>
+                    <p>Træk og slip din Excel fil her, eller klik for at vælge</p>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+                    <button class="btn-primary" onclick="document.getElementById('fileInput').click()">
+                        Vælg Fil
+                    </button>
+                </div>
+                <div id="fileInfo" class="file-info" style="display: none;"></div>
+            </section>
+
+            <!-- Data Preview Section -->
+            <section class="data-section" id="dataSection" style="display: none;">
+                <h2>Data Oversigt</h2>
+                <div class="stats-grid" id="statsGrid"></div>
+
+                <div class="table-container">
+                    <h3>Data Tabel</h3>
+                    <div id="dataTable"></div>
+                </div>
+            </section>
+
+            <section id="debugSection" style="background: #fff3cd; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+                <h3>🔍 Debug Info:</h3>
+                <pre id="debugLog" style="background: white; padding: 1rem; border-radius: 0.5rem; max-height: 300px; overflow-y: auto;">Venter på fil upload...\n</pre>
+            </section>
+        </main>
+
+        <footer>
+            <p>Moderne Dashboard © 2026 - DEBUG VERSION</p>
+        </footer>
+    </div>
+
+    <script>
+        // Debug logger
+        let debugLogs = [];
+        function debugLog(msg) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMsg = `[${timestamp}] ${msg}`;
+            debugLogs.push(logMsg);
+            console.log(msg);
+            const logEl = document.getElementById('debugLog');
+            if (logEl) {
+                logEl.textContent = debugLogs.join('\n');
+            }
+        }
+
+        debugLog('Page loaded - NO CHARTS VERSION');
+
+        // Global variables
+        let currentData = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('DOM loaded, initializing...');
+            initializeFileUpload();
+        });
+
+        function initializeFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBox = document.getElementById('uploadBox');
+
+            debugLog('File upload initialized');
+
+            fileInput.addEventListener('change', function(e) {
+                debugLog('File input changed');
+                const file = e.target.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+            });
+
+            uploadBox.addEventListener('click', () => {
+                debugLog('Upload box clicked');
+                fileInput.click();
+            });
+
+            uploadBox.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadBox.classList.add('dragover');
+                debugLog('Drag over');
+            });
+
+            uploadBox.addEventListener('dragleave', () => {
+                uploadBox.classList.remove('dragover');
+            });
+
+            uploadBox.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadBox.classList.remove('dragover');
+                debugLog('File dropped');
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+        }
+
+        function handleFile(file) {
+            const fileName = file.name;
+            const fileSize = (file.size / 1024).toFixed(2);
+
+            debugLog('Processing file: ' + fileName + ' (' + fileSize + ' KB)');
+
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.innerHTML = `
+                <h3>✅ Fil uploadet</h3>
+                <p><strong>Filnavn:</strong> ${fileName}</p>
+                <p><strong>Størrelse:</strong> ${fileSize} KB</p>
+                <p>Behandler data...</p>
+            `;
+            fileInfo.style.display = 'block';
+
+            const isCSV = fileName.toLowerCase().endsWith('.csv');
+            debugLog('Is CSV: ' + isCSV);
+
+            const reader = new FileReader();
+
+            reader.onerror = function() {
+                debugLog('ERROR: File read error');
+                fileInfo.innerHTML = `
+                    <h3>❌ Fejl</h3>
+                    <p style="color: red;">Kunne ikke læse filen</p>
+                `;
+            };
+
+            reader.onload = function(e) {
+                try {
+                    debugLog('File loaded, parsing...');
+
+                    let jsonData;
+
+                    if (isCSV) {
+                        const text = e.target.result;
+                        debugLog('CSV content length: ' + text.length);
+                        debugLog('CSV preview: ' + text.substring(0, 100));
+
+                        const lines = text.split('\n').filter(line => line.trim());
+                        jsonData = lines.map(line => {
+                            return line.split(',').map(cell => cell.trim());
+                        });
+                    } else {
+                        debugLog('Excel files require SheetJS library - use CSV instead!');
+                        throw new Error('Excel filer kræver biblioteker - brug CSV i stedet!');
+                    }
+
+                    debugLog('Parsed data: ' + jsonData.length + ' rows, ' + jsonData[0].length + ' cols');
+
+                    if (jsonData && jsonData.length > 0 && jsonData[0].length > 0) {
+                        processData(jsonData);
+                        fileInfo.innerHTML = `
+                            <h3>✅ Data indlæst succesfuldt!</h3>
+                            <p><strong>Filnavn:</strong> ${fileName}</p>
+                            <p><strong>Rækker:</strong> ${jsonData.length}</p>
+                            <p><strong>Kolonner:</strong> ${jsonData[0].length}</p>
+                        `;
+                    } else {
+                        throw new Error('Ingen data fundet i filen');
+                    }
+                } catch (error) {
+                    debugLog('ERROR: ' + error.message);
+                    fileInfo.innerHTML = `
+                        <h3>❌ Fejl</h3>
+                        <p style="color: red;">Kunne ikke læse filen: ${error.message}</p>
+                        <p style="font-size: 0.9em;">Tjek debug log nedenfor</p>
+                    `;
+                }
+            };
+
+            if (isCSV) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function processData(data) {
+            debugLog('Processing data...');
+            currentData = data;
+
+            document.getElementById('dataSection').style.display = 'block';
+            debugLog('Data section shown');
+
+            displayStatistics(data);
+            debugLog('Statistics displayed');
+
+            displayTable(data);
+            debugLog('Table displayed');
+
+            debugLog('Data processing complete!');
+        }
+
+        function displayStatistics(data) {
+            const statsGrid = document.getElementById('statsGrid');
+            const totalRows = data.length - 1;
+            const totalColumns = data[0].length;
+
+            let numericColumns = 0;
+            let totalCells = 0;
+
+            for (let i = 1; i < data.length; i++) {
+                for (let j = 0; j < data[i].length; j++) {
+                    if (data[i][j] !== null && data[i][j] !== undefined && data[i][j] !== '') {
+                        totalCells++;
+                    }
+                }
+            }
+
+            for (let j = 0; j < data[0].length; j++) {
+                let isNumeric = true;
+                for (let i = 1; i < Math.min(data.length, 10); i++) {
+                    if (data[i][j] && isNaN(data[i][j])) {
+                        isNumeric = false;
+                        break;
+                    }
+                }
+                if (isNumeric) numericColumns++;
+            }
+
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Rækker</div>
+                    <div class="stat-value">${totalRows}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Kolonner</div>
+                    <div class="stat-value">${totalColumns}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Fyldte Celler</div>
+                    <div class="stat-value">${totalCells}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Numeriske Kolonner</div>
+                    <div class="stat-value">${numericColumns}</div>
+                </div>
+            `;
+
+            debugLog('Stats: ' + totalRows + ' rows, ' + totalColumns + ' cols, ' + totalCells + ' cells');
+        }
+
+        function displayTable(data) {
+            const dataTable = document.getElementById('dataTable');
+
+            if (data.length === 0) return;
+
+            const maxRows = Math.min(data.length, 50);
+
+            let tableHTML = '<table><thead><tr>';
+
+            data[0].forEach(header => {
+                tableHTML += `<th>${header || 'N/A'}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+
+            for (let i = 1; i < maxRows; i++) {
+                tableHTML += '<tr>';
+                data[i].forEach(cell => {
+                    tableHTML += `<td>${cell !== null && cell !== undefined ? cell : ''}</td>`;
+                });
+                tableHTML += '</tr>';
+            }
+
+            tableHTML += '</tbody></table>';
+
+            if (data.length > 50) {
+                tableHTML += `<p style="margin-top: 1rem; color: var(--text-secondary);">Viser de første 50 rækker af ${data.length - 1} total</p>`;
+            }
+
+            dataTable.innerHTML = tableHTML;
+            debugLog('Table rendered with ' + (maxRows - 1) + ' rows');
+        }
+
+        debugLog('Script loaded successfully');
+    </script>
+</body>
+</html>

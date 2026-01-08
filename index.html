@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderne Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- SheetJS for Excel file reading -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Moderne Dashboard</h1>
+            <p class="subtitle">Indlæs dine data fra Excel og visualiser dem</p>
+        </header>
+
+        <main>
+            <!-- File Upload Section -->
+            <section class="upload-section">
+                <div class="upload-box" id="uploadBox">
+                    <div class="upload-icon">📁</div>
+                    <h2>Upload Excel Fil</h2>
+                    <p>Træk og slip din Excel fil her, eller klik for at vælge</p>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+                    <button class="btn-primary" onclick="document.getElementById('fileInput').click()">
+                        Vælg Fil
+                    </button>
+                </div>
+                <div id="fileInfo" class="file-info" style="display: none;"></div>
+            </section>
+
+            <!-- Data Preview Section -->
+            <section class="data-section" id="dataSection" style="display: none;">
+                <h2>Data Oversigt</h2>
+                <div class="stats-grid" id="statsGrid"></div>
+
+                <div class="table-container">
+                    <h3>Data Tabel</h3>
+                    <div id="dataTable"></div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section" id="chartsSection" style="display: none;">
+                <h2>Visualiseringer</h2>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <canvas id="chart1"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart2"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Moderne Dashboard © 2026</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

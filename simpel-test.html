@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simpel Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Simpel Dashboard Test</h1>
+
+    <div class="box">
+        <h2>Test 1: Kan du se denne side?</h2>
+        <p class="success">✅ JA - HTML virker!</p>
+        <p>Hvis du kan læse dette, virker din browser og HTML filen.</p>
+    </div>
+
+    <div class="box">
+        <h2>Test 2: Upload en fil</h2>
+        <p>Vælg <strong>sample-data.csv</strong> filen:</p>
+        <input type="file" id="fileInput" accept=".csv">
+        <div id="result"></div>
+    </div>
+
+    <div class="box">
+        <h2>Test 3: Se data</h2>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        console.log('✅ JavaScript kører!');
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            console.log('Fil valgt:', file.name);
+
+            const result = document.getElementById('result');
+            result.innerHTML = '<p>Læser fil...</p>';
+
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                try {
+                    const text = event.target.result;
+                    console.log('Fil indhold:', text);
+
+                    // Parse CSV
+                    const lines = text.split('\n').filter(line => line.trim());
+                    const data = lines.map(line => line.split(','));
+
+                    console.log('Parsed data:', data);
+
+                    // Vis resultat
+                    result.innerHTML = `
+                        <p class="success">✅ Fil læst succesfuldt!</p>
+                        <p><strong>Filnavn:</strong> ${file.name}</p>
+                        <p><strong>Størrelse:</strong> ${(file.size / 1024).toFixed(2)} KB</p>
+                        <p><strong>Rækker:</strong> ${data.length}</p>
+                        <p><strong>Kolonner:</strong> ${data[0].length}</p>
+                    `;
+
+                    // Vis data i tabel
+                    let tableHTML = '<h3>Data:</h3><table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">';
+
+                    // Header
+                    tableHTML += '<tr style="background: #6366f1; color: white;">';
+                    data[0].forEach(cell => {
+                        tableHTML += `<th>${cell}</th>`;
+                    });
+                    tableHTML += '</tr>';
+
+                    // Data rows (max 10)
+                    for (let i = 1; i < Math.min(data.length, 11); i++) {
+                        tableHTML += '<tr>';
+                        data[i].forEach(cell => {
+                            tableHTML += `<td>${cell}</td>`;
+                        });
+                        tableHTML += '</tr>';
+                    }
+
+                    tableHTML += '</table>';
+
+                    if (data.length > 11) {
+                        tableHTML += `<p><em>Viser 10 af ${data.length - 1} rækker</em></p>`;
+                    }
+
+                    document.getElementById('output').innerHTML = tableHTML;
+
+                } catch (error) {
+                    console.error('FEJL:', error);
+                    result.innerHTML = `<p class="error">❌ Fejl: ${error.message}</p>`;
+                }
+            };
+
+            reader.onerror = function() {
+                console.error('Kunne ikke læse fil');
+                result.innerHTML = '<p class="error">❌ Kunne ikke læse filen</p>';
+            };
+
+            reader.readAsText(file);
+        });
+    </script>
+</body>
+</html>

@@ -2,6 +2,20 @@
 
 Et moderne, responsivt dashboard til visualisering af Excel data direkte i browseren.
 
+## ⚡ QUICK START
+
+**Vil du bare i gang? Følg disse 3 trin:**
+
+1. **Åbn `index.html`** i din browser (dobbeltklik)
+2. **Klik "Vælg Fil"** og vælg `sample-data.csv`
+3. **Se dine data visualiseret!**
+
+**Virker det ikke?** Se [START-HER.md](START-HER.md) for detaljeret guide og fejlfinding.
+
+**Vil du teste først?** Åbn `simpel-test.html` for at verificere at alt virker.
+
+---
+
 ## ✨ Features
 
 - 🎨 **Moderne Design** - Flot gradient design med smooth animationer

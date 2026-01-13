@@ -6,6 +6,7 @@ let chart2Instance = null;
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeFileUpload();
+    initializePowerBI();
 });
 
 // Initialize file upload functionality
@@ -469,4 +470,263 @@ function createPieChart(labels, column) {
             }
         }
     });
+}
+
+// ===========================================
+// Power BI Integration Functions
+// ===========================================
+
+// Initialize Power BI on page load
+function initializePowerBI() {
+    console.log('Initializing Power BI integration...');
+
+    // Load saved client ID
+    const savedClientId = window.powerBIConnector.loadClientId();
+    if (savedClientId) {
+        document.getElementById('clientIdInput').value = savedClientId;
+        document.getElementById('connectBtn').disabled = false;
+    }
+
+    // Check if already authenticated
+    if (window.powerBIConnector.isAuthenticated()) {
+        showAuthenticatedState();
+        loadWorkspaces();
+    }
+}
+
+// Save Client ID
+function saveClientId() {
+    const clientIdInput = document.getElementById('clientIdInput');
+    const clientId = clientIdInput.value.trim();
+
+    if (!clientId) {
+        alert('Indtast venligst et gyldigt Application ID');
+        return;
+    }
+
+    try {
+        window.powerBIConnector.setClientId(clientId);
+        document.getElementById('connectBtn').disabled = false;
+
+        // Show success message
+        showAuthStatus('✓ Client ID gemt succesfuldt', 'success');
+        console.log('Client ID saved:', clientId);
+    } catch (error) {
+        console.error('Error saving client ID:', error);
+        showAuthStatus('✗ Kunne ikke gemme Client ID', 'error');
+    }
+}
+
+// Connect to Power BI (initiate OAuth flow)
+function connectToPowerBI() {
+    try {
+        console.log('Initiating Power BI authentication...');
+        window.powerBIConnector.authenticate();
+    } catch (error) {
+        console.error('Authentication error:', error);
+        showAuthStatus('✗ ' + error.message, 'error');
+    }
+}
+
+// Disconnect from Power BI
+function disconnectPowerBI() {
+    if (confirm('Er du sikker på, at du vil afbryde forbindelsen til Power BI?')) {
+        window.powerBIConnector.clearAuthentication();
+        location.reload();
+    }
+}
+
+// Show authenticated state
+function showAuthenticatedState() {
+    document.getElementById('powerbiConfig').style.display = 'none';
+    document.getElementById('powerbiDataSelection').style.display = 'block';
+    showAuthStatus('✓ Forbundet til Power BI', 'success');
+}
+
+// Show authentication status message
+function showAuthStatus(message, type) {
+    const authStatus = document.getElementById('authStatus');
+    authStatus.textContent = message;
+    authStatus.className = `auth-status ${type}`;
+    authStatus.style.display = 'block';
+
+    // Hide after 5 seconds
+    setTimeout(() => {
+        authStatus.style.display = 'none';
+    }, 5000);
+}
+
+// Load workspaces
+async function loadWorkspaces() {
+    try {
+        console.log('Loading workspaces...');
+        const workspaces = await window.powerBIConnector.getWorkspaces();
+
+        const workspaceSelect = document.getElementById('workspaceSelect');
+        workspaceSelect.innerHTML = '<option value="">-- Vælg workspace --</option>';
+
+        // Add "My Workspace" option
+        workspaceSelect.innerHTML += '<option value="">Mit Workspace (default)</option>';
+
+        workspaces.forEach(workspace => {
+            const option = document.createElement('option');
+            option.value = workspace.id;
+            option.textContent = workspace.name;
+            workspaceSelect.appendChild(option);
+        });
+
+        console.log(`Loaded ${workspaces.length} workspaces`);
+
+        // Load datasets for default workspace
+        loadDatasetsForWorkspace();
+    } catch (error) {
+        console.error('Error loading workspaces:', error);
+        alert('Fejl ved indlæsning af workspaces: ' + error.message);
+    }
+}
+
+// Load datasets for selected workspace
+async function loadDatasetsForWorkspace() {
+    try {
+        const workspaceId = document.getElementById('workspaceSelect').value || null;
+        console.log('Loading datasets for workspace:', workspaceId || 'default');
+
+        const datasets = await window.powerBIConnector.getDatasets(workspaceId);
+
+        const datasetSelect = document.getElementById('datasetSelect');
+        datasetSelect.innerHTML = '<option value="">-- Vælg dataset --</option>';
+
+        datasets.forEach(dataset => {
+            const option = document.createElement('option');
+            option.value = dataset.id;
+            option.textContent = dataset.name;
+            datasetSelect.appendChild(option);
+        });
+
+        console.log(`Loaded ${datasets.length} datasets`);
+
+        // Clear table selection
+        document.getElementById('tableSelect').innerHTML = '<option value="">-- Vælg tabel --</option>';
+        document.getElementById('loadDataBtn').disabled = true;
+    } catch (error) {
+        console.error('Error loading datasets:', error);
+        alert('Fejl ved indlæsning af datasets: ' + error.message);
+    }
+}
+
+// Load tables for selected dataset
+async function loadTablesForDataset() {
+    try {
+        const workspaceId = document.getElementById('workspaceSelect').value || null;
+        const datasetId = document.getElementById('datasetSelect').value;
+
+        if (!datasetId) {
+            document.getElementById('loadDataBtn').disabled = true;
+            return;
+        }
+
+        console.log('Loading tables for dataset:', datasetId);
+
+        const tables = await window.powerBIConnector.getTables(datasetId, workspaceId);
+
+        const tableSelect = document.getElementById('tableSelect');
+        tableSelect.innerHTML = '<option value="">-- Vælg tabel --</option>';
+
+        tables.forEach(table => {
+            const option = document.createElement('option');
+            option.value = table.name;
+            option.textContent = table.name;
+            tableSelect.appendChild(option);
+        });
+
+        console.log(`Loaded ${tables.length} tables`);
+
+        // Enable load button
+        document.getElementById('loadDataBtn').disabled = false;
+    } catch (error) {
+        console.error('Error loading tables:', error);
+        alert('Fejl ved indlæsning af tabeller: ' + error.message);
+    }
+}
+
+// Load data from Power BI
+async function loadPowerBIData() {
+    try {
+        const workspaceId = document.getElementById('workspaceSelect').value || null;
+        const datasetId = document.getElementById('datasetSelect').value;
+        const tableName = document.getElementById('tableSelect').value;
+        const rowLimit = parseInt(document.getElementById('rowLimitInput').value, 10);
+
+        if (!datasetId || !tableName) {
+            alert('Vælg venligst både et dataset og en tabel');
+            return;
+        }
+
+        // Show loading status
+        document.getElementById('loadingStatus').style.display = 'flex';
+        document.getElementById('loadDataBtn').disabled = true;
+
+        console.log('Loading data from Power BI...');
+        console.log('Workspace:', workspaceId || 'default');
+        console.log('Dataset:', datasetId);
+        console.log('Table:', tableName);
+        console.log('Row limit:', rowLimit);
+
+        // Get table data
+        const tableData = await window.powerBIConnector.getTableData(datasetId, tableName, workspaceId, rowLimit);
+
+        // Convert to CSV format
+        const csvData = window.powerBIConnector.convertToCSV(tableData);
+
+        console.log('Data loaded successfully, processing...');
+
+        // Parse CSV into array format for existing dashboard functions
+        const lines = csvData.split('\n').filter(line => line.trim());
+        const data = lines.map(line => {
+            // Handle quoted values
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    values.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            values.push(current.trim());
+
+            return values;
+        });
+
+        console.log('Parsed data:', data.length, 'rows');
+
+        // Process the data using existing dashboard functions
+        processData(data);
+
+        // Hide loading status
+        document.getElementById('loadingStatus').style.display = 'none';
+        document.getElementById('loadDataBtn').disabled = false;
+
+        // Show success message
+        alert(`✓ Data indlæst succesfuldt!\n\nRækker: ${data.length - 1}\nKolonner: ${data[0].length}`);
+
+    } catch (error) {
+        console.error('Error loading Power BI data:', error);
+        document.getElementById('loadingStatus').style.display = 'none';
+        document.getElementById('loadDataBtn').disabled = false;
+        alert('Fejl ved indlæsning af data: ' + error.message);
+    }
+}
+
+// Show setup guide (placeholder)
+function showSetupGuide() {
+    const guideUrl = 'POWERBI-SETUP.md';
+    window.open(guideUrl, '_blank');
 }

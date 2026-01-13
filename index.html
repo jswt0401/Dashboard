@@ -9,6 +9,8 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Chart.js for visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <!-- Power BI Connector -->
+    <script src="powerbi-connector.js"></script>
 </head>
 <body>
     <div class="container">
@@ -18,6 +20,82 @@
         </header>
 
         <main>
+            <!-- Power BI Connection Section -->
+            <section class="powerbi-section">
+                <div class="powerbi-box">
+                    <div class="powerbi-icon">⚡</div>
+                    <h2>Forbind til Power BI</h2>
+                    <p>Hent data direkte fra Power BI Service</p>
+
+                    <!-- Configuration Panel -->
+                    <div id="powerbiConfig" class="powerbi-config">
+                        <div class="form-group">
+                            <label for="clientIdInput">Azure AD Application (Client) ID:</label>
+                            <div class="input-with-button">
+                                <input type="text" id="clientIdInput" placeholder="Indtast dit Application ID" class="form-input">
+                                <button class="btn-secondary" onclick="saveClientId()">Gem</button>
+                            </div>
+                            <small class="form-hint">Se <a href="#" onclick="showSetupGuide(); return false;">opsætningsguiden</a> for hjælp</small>
+                        </div>
+
+                        <!-- Authentication Status -->
+                        <div id="authStatus" class="auth-status" style="display: none;"></div>
+
+                        <!-- Connect Button -->
+                        <button id="connectBtn" class="btn-primary" onclick="connectToPowerBI()" disabled>
+                            🔐 Forbind til Power BI
+                        </button>
+                    </div>
+
+                    <!-- Data Selection Panel (shown after authentication) -->
+                    <div id="powerbiDataSelection" class="powerbi-data-selection" style="display: none;">
+                        <div class="selection-status">
+                            <span class="status-badge status-connected">✓ Forbundet</span>
+                            <button class="btn-link" onclick="disconnectPowerBI()">Afbryd forbindelse</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="workspaceSelect">Vælg Workspace:</label>
+                            <select id="workspaceSelect" class="form-select" onchange="loadDatasetsForWorkspace()">
+                                <option value="">-- Vælg workspace --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="datasetSelect">Vælg Dataset:</label>
+                            <select id="datasetSelect" class="form-select" onchange="loadTablesForDataset()">
+                                <option value="">-- Vælg dataset --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tableSelect">Vælg Tabel:</label>
+                            <select id="tableSelect" class="form-select">
+                                <option value="">-- Vælg tabel --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rowLimitInput">Max antal rækker:</label>
+                            <input type="number" id="rowLimitInput" value="1000" min="10" max="10000" class="form-input">
+                        </div>
+
+                        <button id="loadDataBtn" class="btn-primary" onclick="loadPowerBIData()" disabled>
+                            📊 Indlæs Data
+                        </button>
+
+                        <div id="loadingStatus" class="loading-status" style="display: none;">
+                            <div class="spinner"></div>
+                            <span>Indlæser data fra Power BI...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="section-divider">
+                <span>ELLER</span>
+            </div>
+
             <!-- File Upload Section -->
             <section class="upload-section">
                 <div class="upload-box" id="uploadBox">

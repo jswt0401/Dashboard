@@ -1,14 +1,20 @@
 # 📊 Moderne Dashboard
 
-Et moderne, responsivt dashboard til visualisering af Excel data direkte i browseren.
+Et moderne, responsivt dashboard til visualisering af data fra Excel filer eller direkte fra Power BI Service.
 
 ## ⚡ QUICK START
 
-**Vil du bare i gang? Følg disse 3 trin:**
+**Vælg din foretrukne datakilde:**
 
+### Option 1: Excel/CSV fil (Hurtigst)
 1. **Åbn `index.html`** i din browser (dobbeltklik)
 2. **Klik "Vælg Fil"** og vælg `sample-data.csv`
 3. **Se dine data visualiseret!**
+
+### Option 2: Power BI Service (Avanceret)
+1. **Åbn `index.html`** i din browser
+2. **Følg opsætningsguiden**: Se [POWERBI-SETUP.md](POWERBI-SETUP.md)
+3. **Forbind til Power BI** og hent data direkte fra dine datasets
 
 **Virker det ikke?** Se [START-HER.md](START-HER.md) for detaljeret guide og fejlfinding.
 
@@ -20,9 +26,11 @@ Et moderne, responsivt dashboard til visualisering af Excel data direkte i brows
 
 - 🎨 **Moderne Design** - Flot gradient design med smooth animationer
 - 📁 **Excel Import** - Upload `.xlsx`, `.xls` eller `.csv` filer
+- ⚡ **Power BI Integration** - Forbind direkte til Power BI Service og hent data fra dine datasets
 - 🖱️ **Drag & Drop** - Træk og slip filer direkte til dashboardet
 - 📊 **Automatisk Visualisering** - Generer automatisk grafer fra dine data
 - 📈 **Flere Diagram Typer** - Linje-, søjle- og cirkeldiagrammer
+- 🔐 **Sikker Authentication** - OAuth 2.0 integration med Microsoft/Azure AD
 - 📱 **Responsivt Design** - Virker perfekt på desktop, tablet og mobil
 - ⚡ **Hurtig Performance** - Ingen backend nødvendig, alt kører i browseren
 
@@ -53,11 +61,19 @@ php -S localhost:8000
 
 Åbn derefter: `http://localhost:8000`
 
-### 2. Upload Excel Data
+### 2. Indlæs Data
 
+**Option A: Excel/CSV fil**
 1. Klik på "Vælg Fil" knappen eller træk og slip din Excel fil
 2. Dashboardet læser automatisk dataen
 3. Se statistik, tabel og grafer genereret fra dine data
+
+**Option B: Power BI Service**
+1. Følg opsætningsguiden i [POWERBI-SETUP.md](POWERBI-SETUP.md) for at konfigurere Azure AD
+2. Indtast dit Application (Client) ID i dashboardet
+3. Klik "Forbind til Power BI" og log ind
+4. Vælg workspace, dataset og tabel
+5. Klik "Indlæs Data" for at hente data direkte fra Power BI
 
 ## 📋 Excel Fil Format
 
@@ -97,10 +113,13 @@ Dashboardet virker bedst med Excel filer der har:
 
 ```
 Dashboard/
-├── index.html      # Hovedfil - åbn denne i browseren
-├── styles.css      # Styling og design
-├── app.js          # JavaScript logik
-└── README.md       # Denne fil
+├── index.html              # Hovedfil - åbn denne i browseren
+├── styles.css              # Styling og design
+├── app.js                  # JavaScript logik og Power BI integration
+├── powerbi-connector.js    # Power BI Service API connector
+├── POWERBI-SETUP.md        # Opsætningsguide til Power BI integration
+├── START-HER.md            # Detaljeret guide
+└── README.md               # Denne fil
 ```
 
 ## 🌐 Browser Support
@@ -125,14 +144,21 @@ Alt data behandles lokalt i din browser. Ingen data sendes til nogen server. Dit
 
 ## 🎯 Fremtidige Features
 
+Implementerede features:
+- [x] Power BI Service integration
+- [x] OAuth 2.0 authentication
+- [x] Hent data fra Power BI datasets
+
 Mulige forbedringer:
 - [ ] Eksporter grafer som billeder
 - [ ] Vælg hvilke kolonner der skal visualiseres
 - [ ] Flere diagram typer (scatter, area, etc.)
 - [ ] Filtrer og sorter data
 - [ ] Gem dashboard konfiguration
-- [ ] Sammenlign flere filer
+- [ ] Sammenlign flere filer/datasets
 - [ ] Avancerede statistikker (gennemsnit, median, etc.)
+- [ ] Power BI Embedded rapporter
+- [ ] Automatisk data refresh
 
 ## 📝 Licens
 
